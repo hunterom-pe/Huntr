@@ -6,7 +6,7 @@ import { getPrisma } from "@/lib/prisma";
 
 export async function POST(req: NextRequest) {
   try {
-    const pdf = require("pdf-parse");
+    const { PDFParse } = require("pdf-parse");
     const mammoth = require("mammoth");
     const formData = await req.formData();
     const file = formData.get("resume") as File | null;
@@ -19,8 +19,10 @@ export async function POST(req: NextRequest) {
     let text = "";
 
     if (file.type === "application/pdf") {
-      const data = await pdf(buffer);
+      const parser = new PDFParse({ data: buffer });
+      const data = await parser.getText();
       text = data.text;
+      await parser.destroy();
     } else if (file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
       const result = await mammoth.extractRawText({ buffer });
       text = result.value;

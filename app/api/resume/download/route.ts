@@ -24,7 +24,8 @@ export async function GET(req: NextRequest) {
     // Generate PDF
     return new Promise<NextResponse>((resolve, reject) => {
       try {
-        const PDFDocument = require("pdfkit");
+        const pdfkitLib = require("pdfkit");
+        const PDFDocument = pdfkitLib.default || pdfkitLib;
         const doc = new PDFDocument();
         const buffers: Buffer[] = [];
 
