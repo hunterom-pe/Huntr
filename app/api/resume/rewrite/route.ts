@@ -1,0 +1,76 @@
+export const dynamic = "force-dynamic";
+
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+
+export async function POST(req: NextRequest) {
+  try {
+    const { profileId, jobId } = await req.json();
+    
+    if (!profileId || !jobId) {
+      return NextResponse.json({ error: "profileId and jobId are required" }, { status: 400 });
+    }
+
+    const profile = await prisma.profile.findUnique({ where: { id: profileId } });
+    const job = await prisma.job.findUnique({ where: { id: jobId } });
+
+    if (!profile || !job) {
+      return NextResponse.json({ error: "Profile or Job not found" }, { status: 404 });
+    }
+
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      const mockRewritten = `# Rewritten Resume for ${job.title} at ${job.company}\n\n*This is a mock rewritten resume since no Gemini API key was provided.*\n\n${profile.originalResume}`;
+      let application = await prisma.application.findFirst({ where: { jobId } });
+      if (!application) {
+        application = await prisma.application.create({
+          data: { jobId, status: "PENDING", rewrittenResume: mockRewritten }
+        });
+      } else {
+        application = await prisma.application.update({
+          where: { id: application.id },
+          data: { rewrittenResume: mockRewritten }
+        });
+      }
+      return NextResponse.json({ success: true, applicationId: application.id, rewrittenResume: mockRewritten });
+    }
+
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+
+    const prompt = `
+    You are an expert resume writer. Please rewrite the following resume to perfectly match the provided job description.
+    Highlight the skills and experiences from the resume that are most relevant to the job.
+    Do not invent new experiences, but rephrase existing ones to use the keywords and tone from the job description.
+    Output the rewritten resume in Markdown format.
+
+    RESUME:
+    ${profile.originalResume}
+
+    JOB DESCRIPTION:
+    ${job.description}
+    `;
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const rewrittenResume = response.text().trim();
+
+    let application = await prisma.application.findFirst({ where: { jobId } });
+    if (!application) {
+      application = await prisma.application.create({
+        data: { jobId, status: "PENDING", rewrittenResume: rewrittenResume }
+      });
+    } else {
+      application = await prisma.application.update({
+        where: { id: application.id },
+        data: { rewrittenResume: rewrittenResume }
+      });
+    }
+
+    return NextResponse.json({ success: true, applicationId: application.id, rewrittenResume });
+  } catch (error) {
+    console.error("Rewrite error:", error);
+    return NextResponse.json({ error: "Failed to rewrite resume" }, { status: 500 });
+  }
+}

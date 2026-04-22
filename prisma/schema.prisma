@@ -1,0 +1,42 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Profile {
+  id              String   @id @default(cuid())
+  originalResume  String   // Extracted text
+  contactInfo     String?
+  skills          String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Job {
+  id              String   @id @default(cuid())
+  company         String
+  title           String
+  location        String   // Remote, Phoenix, Tempe, Scottsdale
+  description     String
+  applyLink       String?
+  matchScore      Int?     // 0-100
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  Application     Application[]
+}
+
+model Application {
+  id              String   @id @default(cuid())
+  jobId           String
+  job             Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  status          String   @default("NOT_APPLIED") // NOT_APPLIED, PENDING, INTERVIEWING, OFFER, REJECTED
+  rewrittenResume String?  // The markdown/text of the rewritten resume
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
