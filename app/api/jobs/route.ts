@@ -1,16 +1,16 @@
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { getPrisma } from "@/lib/prisma";
 
 export async function GET(req: NextRequest) {
   try {
-    const jobs = await prisma.job.findMany({
+    const jobs = await getPrisma().job.findMany({
       orderBy: { createdAt: 'desc' },
       include: { Application: true }
     });
 
-    const applications = await prisma.application.findMany({
+    const applications = await getPrisma().application.findMany({
       include: { job: true }
     });
 

@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { getPrisma } from "@/lib/prisma";
 import { getJson } from "serpapi";
 
 const LOCATIONS = ["Remote", "Phoenix, AZ", "Tempe, AZ", "Scottsdale, AZ"];
@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "profileId is required" }, { status: 400 });
     }
 
-    const profile = await prisma.profile.findUnique({ where: { id: profileId } });
+    const profile = await getPrisma().profile.findUnique({ where: { id: profileId } });
     if (!profile) {
       return NextResponse.json({ error: "Profile not found" }, { status: 404 });
     }
@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
         
         for (const job of jobsResults.slice(0, 5)) { // Limit to 5 per location for demo
           // Save to DB
-          const savedJob = await prisma.job.create({
+          const savedJob = await getPrisma().job.create({
             data: {
               company: job.company_name,
               title: job.title,
@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
       console.log("No SERPAPI_KEY found. Generating mock jobs.");
       for (const location of LOCATIONS) {
         for (let i = 0; i < 2; i++) {
-          const savedJob = await prisma.job.create({
+          const savedJob = await getPrisma().job.create({
             data: {
               company: `Mock Company ${i + 1}`,
               title: `Frontend Developer`,

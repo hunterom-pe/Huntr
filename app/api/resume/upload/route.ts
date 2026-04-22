@@ -1,12 +1,13 @@
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-const pdf = require("pdf-parse");
-const mammoth = require("mammoth");
+import { getPrisma } from "@/lib/prisma";
+
 
 export async function POST(req: NextRequest) {
   try {
+    const pdf = require("pdf-parse");
+    const mammoth = require("mammoth");
     const formData = await req.formData();
     const file = formData.get("resume") as File | null;
 
@@ -30,7 +31,7 @@ export async function POST(req: NextRequest) {
     // Optional: We could use Gemini right here to extract name, contact info, and skills
     // For now, let's just store the raw text and move on to the dashboard
 
-    const profile = await prisma.profile.create({
+    const profile = await getPrisma().profile.create({
       data: {
         originalResume: text,
       },

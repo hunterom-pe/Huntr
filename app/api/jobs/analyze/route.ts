@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { getPrisma } from "@/lib/prisma";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export async function POST(req: NextRequest) {
@@ -12,8 +12,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "profileId and jobId are required" }, { status: 400 });
     }
 
-    const profile = await prisma.profile.findUnique({ where: { id: profileId } });
-    const job = await prisma.job.findUnique({ where: { id: jobId } });
+    const profile = await getPrisma().profile.findUnique({ where: { id: profileId } });
+    const job = await getPrisma().job.findUnique({ where: { id: jobId } });
 
     if (!profile || !job) {
       return NextResponse.json({ error: "Profile or Job not found" }, { status: 404 });
@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
     if (!apiKey) {
       // Return a random score if no API key is provided
       const randomScore = Math.floor(Math.random() * 40) + 60; // 60-100
-      await prisma.job.update({
+      await getPrisma().job.update({
         where: { id: jobId },
         data: { matchScore: randomScore }
       });
@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
     const score = parseInt(text.replace(/[^0-9]/g, ''));
     const finalScore = isNaN(score) ? 50 : Math.min(100, Math.max(0, score));
 
-    await prisma.job.update({
+    await getPrisma().job.update({
       where: { id: jobId },
       data: { matchScore: finalScore }
     });

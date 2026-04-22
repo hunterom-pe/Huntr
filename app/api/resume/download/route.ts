@@ -1,8 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import PDFDocument from "pdfkit";
+import { getPrisma } from "@/lib/prisma";
 
 export async function GET(req: NextRequest) {
   try {
@@ -13,7 +12,7 @@ export async function GET(req: NextRequest) {
       return new NextResponse("applicationId is required", { status: 400 });
     }
 
-    const application = await prisma.application.findUnique({
+    const application = await getPrisma().application.findUnique({
       where: { id: applicationId },
       include: { job: true },
     });
@@ -25,6 +24,7 @@ export async function GET(req: NextRequest) {
     // Generate PDF
     return new Promise<NextResponse>((resolve, reject) => {
       try {
+        const PDFDocument = require("pdfkit");
         const doc = new PDFDocument();
         const buffers: Buffer[] = [];
 

@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { getPrisma } from "@/lib/prisma";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export async function POST(req: NextRequest) {
@@ -12,8 +12,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "profileId and jobId are required" }, { status: 400 });
     }
 
-    const profile = await prisma.profile.findUnique({ where: { id: profileId } });
-    const job = await prisma.job.findUnique({ where: { id: jobId } });
+    const profile = await getPrisma().profile.findUnique({ where: { id: profileId } });
+    const job = await getPrisma().job.findUnique({ where: { id: jobId } });
 
     if (!profile || !job) {
       return NextResponse.json({ error: "Profile or Job not found" }, { status: 404 });
@@ -22,13 +22,13 @@ export async function POST(req: NextRequest) {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
       const mockRewritten = `# Rewritten Resume for ${job.title} at ${job.company}\n\n*This is a mock rewritten resume since no Gemini API key was provided.*\n\n${profile.originalResume}`;
-      let application = await prisma.application.findFirst({ where: { jobId } });
+      let application = await getPrisma().application.findFirst({ where: { jobId } });
       if (!application) {
-        application = await prisma.application.create({
+        application = await getPrisma().application.create({
           data: { jobId, status: "PENDING", rewrittenResume: mockRewritten }
         });
       } else {
-        application = await prisma.application.update({
+        application = await getPrisma().application.update({
           where: { id: application.id },
           data: { rewrittenResume: mockRewritten }
         });
@@ -56,13 +56,13 @@ export async function POST(req: NextRequest) {
     const response = await result.response;
     const rewrittenResume = response.text().trim();
 
-    let application = await prisma.application.findFirst({ where: { jobId } });
+    let application = await getPrisma().application.findFirst({ where: { jobId } });
     if (!application) {
-      application = await prisma.application.create({
+      application = await getPrisma().application.create({
         data: { jobId, status: "PENDING", rewrittenResume: rewrittenResume }
       });
     } else {
-      application = await prisma.application.update({
+      application = await getPrisma().application.update({
         where: { id: application.id },
         data: { rewrittenResume: rewrittenResume }
       });
