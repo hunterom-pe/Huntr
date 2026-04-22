@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     // Extract a brief query based on skills, or default to a generic job if skills are empty
     // For MVP, we will use a hardcoded query or extract top 3 keywords. Let's assume a generic tech query for now,
     // or we can use Gemini to extract job title. Let's do a generic one if no skills are parsed.
-    const query = "Software Engineer OR Developer"; // In a real app, this should be dynamically generated via Gemini based on the resume.
+    const query = "QA Lead"; // Updated dynamically for MVP testing
 
     const serpApiKey = process.env.SERPAPI_KEY;
     const newJobs = [];
@@ -29,12 +29,17 @@ export async function POST(req: NextRequest) {
     if (serpApiKey) {
       // Sweep jobs across locations
       for (const location of LOCATIONS) {
-        const response = await getJson({
+        const searchParams: any = {
           engine: "google_jobs",
-          q: query,
-          location: location,
+          q: location === "Remote" ? query : `${query} in ${location}`,
           api_key: serpApiKey,
-        });
+        };
+
+        if (location === "Remote") {
+          searchParams.ltype = "1"; // Work from home
+        }
+
+        const response = await getJson(searchParams);
 
         const jobsResults = response.jobs_results || [];
         
