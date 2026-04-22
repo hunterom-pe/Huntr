@@ -7,12 +7,24 @@ import styles from "./dashboard.module.css";
 
 function DashboardContent() {
   const searchParams = useSearchParams();
-  const profileId = searchParams.get("profileId");
+  const [profileId, setProfileId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const idFromUrl = searchParams.get("profileId");
+    if (idFromUrl) {
+      setProfileId(idFromUrl);
+      localStorage.setItem("huntr_profile_id", idFromUrl);
+    } else {
+      const savedId = localStorage.getItem("huntr_profile_id");
+      if (savedId) setProfileId(savedId);
+    }
+  }, [searchParams]);
 
   const [jobs, setJobs] = useState<any[]>([]);
   const [applications, setApplications] = useState<any[]>([]);
   const [isSweeping, setIsSweeping] = useState(false);
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState("dashboard");
 
   const fetchJobs = async () => {
     const res = await fetch("/api/jobs");
@@ -47,6 +59,11 @@ function DashboardContent() {
   };
 
   const handleAnalyze = async (jobId: string) => {
+    if (!profileId) {
+      console.error("Missing profileId for analysis");
+      alert("Please upload a resume first.");
+      return;
+    }
     setLoadingAction(`analyze-${jobId}`);
     try {
       const res = await fetch("/api/jobs/analyze", {
@@ -56,13 +73,24 @@ function DashboardContent() {
       });
       if (res.ok) {
         await fetchJobs();
+      } else {
+        const errorData = await res.json();
+        console.error("Analysis failed:", errorData.error);
+        alert(`Analysis failed: ${errorData.error}`);
       }
+    } catch (err) {
+      console.error("Network error during analysis:", err);
     } finally {
       setLoadingAction(null);
     }
   };
 
   const handleRewrite = async (jobId: string) => {
+    if (!profileId) {
+      console.error("Missing profileId for rewriting");
+      alert("Please upload a resume first.");
+      return;
+    }
     setLoadingAction(`rewrite-${jobId}`);
     try {
       const res = await fetch("/api/resume/rewrite", {
@@ -72,7 +100,13 @@ function DashboardContent() {
       });
       if (res.ok) {
         await fetchJobs();
+      } else {
+        const errorData = await res.json();
+        console.error("Rewrite failed:", errorData.error);
+        alert(`Rewrite failed: ${errorData.error}`);
       }
+    } catch (err) {
+      console.error("Network error during rewrite:", err);
     } finally {
       setLoadingAction(null);
     }
@@ -92,16 +126,28 @@ function DashboardContent() {
           <span className="text-xs ml-2 px-2 py-0.5 rounded-full bg-[var(--text-main)] text-[var(--bg-main)] font-bold align-middle">v1.0</span>
         </div>
         <nav>
-          <div className={`${styles.navItem} ${styles.navItemActive}`}>
+          <div 
+            className={`${styles.navItem} ${activeTab === "dashboard" ? styles.navItemActive : ""}`}
+            onClick={() => setActiveTab("dashboard")}
+          >
             <LayoutDashboard size={20} /> Dashboard
           </div>
-          <div className={styles.navItem}>
+          <div 
+            className={`${styles.navItem} ${activeTab === "applications" ? styles.navItemActive : ""}`}
+            onClick={() => setActiveTab("applications")}
+          >
             <Briefcase size={20} /> My Applications
           </div>
-          <div className={styles.navItem}>
+          <div 
+            className={`${styles.navItem} ${activeTab === "resumes" ? styles.navItemActive : ""}`}
+            onClick={() => setActiveTab("resumes")}
+          >
             <FileText size={20} /> Resumes
           </div>
-          <div className={styles.navItem}>
+          <div 
+            className={`${styles.navItem} ${activeTab === "settings" ? styles.navItemActive : ""}`}
+            onClick={() => setActiveTab("settings")}
+          >
             <Settings size={20} /> Settings
           </div>
         </nav>
@@ -141,7 +187,7 @@ function DashboardContent() {
           <div className={styles.jobsList}>
             <div className={styles.sectionTitle}>
               Matched Jobs
-              <span className="text-sm font-normal text-[var(--text-muted)]">{jobs.length} found</span>
+              <div className={styles.jobCountBadge}>{jobs.length} total</div>
             </div>
             
             {jobs.length === 0 ? (
@@ -179,7 +225,7 @@ function DashboardContent() {
 
                     <div className={styles.jobFooter}>
                       <div className={styles.jobLocation}>
-                        📍 {job.location}
+                        <Search size={14} className="inline mr-1" /> {job.location}
                       </div>
                       <div className={styles.actions}>
                         {!app ? (
