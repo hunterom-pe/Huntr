@@ -4,9 +4,19 @@ import { NextRequest, NextResponse } from "next/server";
 import { getPrisma } from "@/lib/prisma";
 
 
+export async function GET() {
+  try {
+    const profile = await getPrisma().profile.findFirst({
+      orderBy: { createdAt: 'desc' }
+    });
+    return NextResponse.json({ profile });
+  } catch (error) {
+    return NextResponse.json({ error: "Failed to fetch profile" }, { status: 500 });
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
-    const { PDFParse } = require("pdf-parse");
     const mammoth = require("mammoth");
     const formData = await req.formData();
     const file = formData.get("resume") as File | null;
@@ -16,32 +26,34 @@ export async function POST(req: NextRequest) {
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
-    let text = "";
+    let resumeText = "";
 
     if (file.type === "application/pdf") {
+      const { PDFParse } = require("pdf-parse");
       const parser = new PDFParse({ data: buffer });
       const data = await parser.getText();
-      text = data.text;
+      resumeText = data.text;
       await parser.destroy();
     } else if (file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
       const result = await mammoth.extractRawText({ buffer });
-      text = result.value;
+      resumeText = result.value;
     } else {
       return NextResponse.json({ error: "Unsupported file type" }, { status: 400 });
     }
 
-    // Optional: We could use Gemini right here to extract name, contact info, and skills
-    // For now, let's just store the raw text and move on to the dashboard
-
     const profile = await getPrisma().profile.create({
       data: {
-        originalResume: text,
+        originalResume: resumeText,
       },
     });
 
     return NextResponse.json({ profileId: profile.id, success: true });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Upload error:", error);
-    return NextResponse.json({ error: "Failed to process resume" }, { status: 500 });
+    return NextResponse.json({ 
+      error: "Failed to process resume", 
+      details: error.message,
+      stack: error.stack 
+    }, { status: 500 });
   }
 }

@@ -26,9 +26,14 @@ model Job {
   description     String
   applyLink       String?
   matchScore      Int?     // 0-100
+  isSaved         Boolean  @default(false)
+  isDeleted       Boolean  @default(false)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   Application     Application[]
+
+  @@index([isSaved])
+  @@index([isDeleted])
 }
 
 model Application {
