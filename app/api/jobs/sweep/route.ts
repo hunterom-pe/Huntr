@@ -5,18 +5,24 @@ import { getPrisma } from "@/lib/prisma";
 import { getJson } from "serpapi";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
+import { auth } from "@/lib/auth";
+
 const LOCATIONS = ["Remote", "Phoenix, AZ", "Tempe, AZ", "Scottsdale, AZ"];
 
 export async function POST(req: NextRequest) {
   try {
-    const { profileId } = await req.json();
-    if (!profileId) {
-      return NextResponse.json({ error: "profileId is required" }, { status: 400 });
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    const userId = session.user.id;
 
-    const profile = await getPrisma().profile.findUnique({ where: { id: profileId } });
+    const profile = await getPrisma().profile.findUnique({ 
+      where: { userId } 
+    });
+
     if (!profile) {
-      return NextResponse.json({ error: "Profile not found" }, { status: 404 });
+      return NextResponse.json({ error: "Profile not found. Please upload a resume first." }, { status: 404 });
     }
 
     // Extract a brief query based on skills, or default to a generic job if skills are empty
@@ -25,11 +31,11 @@ export async function POST(req: NextRequest) {
     const query = "QA Lead"; // Updated dynamically for MVP testing
 
     const serpApiKey = process.env.SERPAPI_KEY;
-    const allScrapedJobs: any[] = [];
+    const allScrapedJobs: unknown[] = [];
 
     if (serpApiKey) {
       const searchPromises = LOCATIONS.map(async (location) => {
-        const searchParams: any = {
+        const searchParams: Record<string, string> = {
           engine: "google_jobs",
           q: location === "Remote" ? query : `${query} in ${location}`,
           api_key: serpApiKey,
@@ -43,13 +49,13 @@ export async function POST(req: NextRequest) {
       const allResults = await Promise.all(searchPromises);
       
       const jobsToSummarize = allResults.flatMap(res => 
-        res.results.slice(0, 5).map((job: any) => ({ ...job, location: res.location }))
+        res.results.slice(0, 5).map((job: { description?: string; snippet?: string; [key: string]: unknown }) => ({ ...job, location: res.location }))
       );
 
       const genAI = process.env.GEMINI_API_KEY ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY) : null;
-      const model = genAI?.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const model = genAI?.getGenerativeModel({ model: "gemini-flash-latest" });
 
-      const processedJobs = await Promise.all(jobsToSummarize.map(async (job: any) => {
+      const processedJobs = await Promise.all(jobsToSummarize.map(async (job: { title: string; company_name: string; description?: string; snippet?: string; related_links?: { link: string }[]; location: string }) => {
         let summarizedDescription = job.description || job.snippet || "No description provided.";
         let matchScore: number | null = Math.floor(Math.random() * 31) + 65;
         

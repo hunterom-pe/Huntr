@@ -9,13 +9,65 @@ datasource db {
   provider = "postgresql"
 }
 
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  accounts      Account[]
+  sessions      Session[]
+  profile       Profile?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Account {
+  id                 String  @id @default(cuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?
+  access_token       String?
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?
+  session_state      String?
+  user               User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
 model Profile {
   id              String   @id @default(cuid())
+  userId          String?  @unique
+  user            User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
   originalResume  String   // Extracted text
+  docxBase64       String?  // The actual DOCX data for templating
+  pdfBase64       String?  // Legacy PDF data for Vision analysis
   contactInfo     String?
   skills          String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+  Application     Application[]
 }
 
 model Job {
@@ -40,8 +92,13 @@ model Application {
   id              String   @id @default(cuid())
   jobId           String
   job             Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  profileId       String?
+  profile         Profile? @relation(fields: [profileId], references: [id])
   status          String   @default("NOT_APPLIED") // NOT_APPLIED, PENDING, INTERVIEWING, OFFER, REJECTED
   rewrittenResume String?  // The markdown/text of the rewritten resume
+  rewrittenResumeJson Json?    // The structured JSON of the rewritten resume
+  rewrittenResumeHtml String?    // The pixel-perfect HTML/CSS of the rewritten resume
+  rewrittenDocxBase64 String?    // The generated DOCX file
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }

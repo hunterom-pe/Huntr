@@ -2,9 +2,19 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
 import { getPrisma } from "@/lib/prisma";
+import PizZip from "pizzip";
+import puppeteer from "puppeteer";
+
+import { auth } from "@/lib/auth";
 
 export async function GET(req: NextRequest) {
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return new NextResponse("Unauthorized", { status: 401 });
+    }
+    const userId = session.user.id;
+
     const searchParams = req.nextUrl.searchParams;
     const applicationId = searchParams.get("applicationId");
 
@@ -14,48 +24,100 @@ export async function GET(req: NextRequest) {
 
     const application = await getPrisma().application.findUnique({
       where: { id: applicationId },
-      include: { job: true },
+      include: { job: true, profile: { include: { user: true } } }
     });
 
-    if (!application || !application.rewrittenResume) {
-      return new NextResponse("Application or rewritten resume not found", { status: 404 });
+    if (!application || !application.profile) {
+      return new NextResponse("Application or Profile not found", { status: 404 });
     }
 
-    // Generate PDF
-    return new Promise<NextResponse>((resolve, reject) => {
+    // Security: Verify that the application belongs to the authenticated user
+    if (application.profile.userId !== userId) {
+       return new NextResponse("Unauthorized: Application does not belong to your account", { status: 403 });
+    }
+
+    const data = application.rewrittenResumeJson as Record<string, unknown>;
+    if (!data) {
+       return new NextResponse("No rewritten data found. Please optimize first.", { status: 400 });
+    }
+
+    const rawData = (data.rewrittenJson || data) as unknown;
+    const resumeData = rawData as { 
+      original_summary_anchor?: string; 
+      summary?: string; 
+      experience?: { original_anchor?: string; new_bullets?: string[] | string }[];
+      header?: { name?: string };
+    };
+
+    // --- CASE 1: SMART DOCX CLONE ---
+    if (application.profile.docxBase64) {
       try {
-        const pdfkitLib = require("pdfkit");
-        const PDFDocument = pdfkitLib.default || pdfkitLib;
-        const doc = new PDFDocument();
-        const buffers: Buffer[] = [];
+        const docxBuffer = Buffer.from(application.profile.docxBase64, 'base64');
+        const zip = new PizZip(docxBuffer);
+        let content = zip.file("word/document.xml")?.asText();
 
-        doc.on("data", buffers.push.bind(buffers));
-        doc.on("end", () => {
-          const pdfData = Buffer.concat(buffers);
-          const response = new NextResponse(pdfData, {
-            headers: {
-              "Content-Type": "application/pdf",
-              "Content-Disposition": `attachment; filename="Rewritten_Resume_${application.job.company.replace(/\\s+/g, '_')}.pdf"`,
-            },
+        
+        // 1. Replace Summary
+        if (resumeData.original_summary_anchor && resumeData.summary && content) {
+          console.log("Replacing summary using anchor:", resumeData.original_summary_anchor as string);
+          content = content.replace(resumeData.original_summary_anchor as string, resumeData.summary as string);
+        }
+
+        // 2. Replace Experience Bullets
+        if (resumeData.experience && Array.isArray(resumeData.experience) && content) {
+          resumeData.experience.forEach((exp: { original_anchor?: string; new_bullets?: string[] | string }) => {
+            if (exp.original_anchor && exp.new_bullets) {
+              console.log("Replacing experience using anchor:", exp.original_anchor);
+              const newText = Array.isArray(exp.new_bullets) ? exp.new_bullets.join("\n") : exp.new_bullets;
+              content = content!.replace(exp.original_anchor, newText);
+            }
           });
-          resolve(response);
+        }
+
+        if (content) {
+          zip.file("word/document.xml", content);
+        }
+
+        const buf = zip.generate({
+          type: "nodebuffer",
+          compression: "DEFLATE",
         });
 
-        // Basic formatting of the markdown for PDF
-        // Note: For a true premium generation we would parse markdown to PDF properly. 
-        // For MVP, we will strip basic markdown characters and format it.
-        const cleanText = (application.rewrittenResume || "").replace(/\\*\\*/g, "").replace(/\\*/g, "").replace(/#/g, "");
-        doc.fontSize(12).text(cleanText, {
-          align: "left",
+        return new NextResponse(new Uint8Array(buf), {
+          headers: {
+            "Content-Type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "Content-Disposition": `attachment; filename="Optimized_Resume_${(resumeData.header?.name || 'Resume').replace(/\s+/g, '_')}.docx"`
+          }
         });
-
-        doc.end();
-      } catch (err) {
-        reject(err);
+      } catch (docxError) {
+        console.error("Surgical DOCX swap failed:", docxError);
       }
-    });
+    }
+
+    // --- CASE 2: PDF RENDER (Fallback) ---
+    if (application.rewrittenResumeHtml) {
+      try {
+        const browser = await puppeteer.launch({ headless: true });
+        const page = await browser.newPage();
+        await page.setContent(application.rewrittenResumeHtml, { waitUntil: 'networkidle0' });
+        const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true });
+        await browser.close();
+
+        return new NextResponse(new Uint8Array(pdfBuffer), {
+          headers: {
+            "Content-Type": "application/pdf",
+            "Content-Disposition": `attachment; filename="Optimized_Resume_${String(resumeData.header?.name || 'Resume').replace(/\s+/g, '_')}.pdf"`
+          }
+        });
+      } catch (pdfError) {
+        console.error("PDF generation failed:", pdfError);
+      }
+    }
+
+    return new NextResponse("Failed to generate download. No template available.", { status: 500 });
+
   } catch (error) {
     console.error("Download error:", error);
-    return new NextResponse("Failed to generate PDF", { status: 500 });
+    return new NextResponse("Internal Server Error", { status: 500 });
   }
 }

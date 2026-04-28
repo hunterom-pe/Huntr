@@ -3,13 +3,36 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { getPrisma } from "@/lib/prisma";
 
+import { auth } from "@/lib/auth";
+
 export async function GET(req: NextRequest) {
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const userId = session.user.id;
+
+    // Find the user's profile
+    const profile = await getPrisma().profile.findUnique({
+      where: { userId }
+    });
+
+    if (!profile) {
+      return NextResponse.json({ jobs: [], applications: [], noProfile: true });
+    }
+    
+    const profileId = profile.id;
+
     const jobs = await getPrisma().job.findMany({
       where: { isDeleted: false },
       orderBy: { createdAt: 'desc' },
       take: 100,
-      include: { Application: true }
+      include: { 
+        Application: {
+          where: { profileId }
+        } 
+      }
     });
 
     // Automate missing match scores
@@ -26,6 +49,7 @@ export async function GET(req: NextRequest) {
     }
 
     const applications = await getPrisma().application.findMany({
+      where: { profileId },
       include: { job: true }
     });
 

@@ -2,10 +2,12 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { UploadCloud, FileText, Loader2 } from "lucide-react";
+import { UploadCloud, FileText, Loader2, LogOut } from "lucide-react";
+import { useSession, signOut } from "next-auth/react";
 import styles from "./page.module.css";
 
 export default function Home() {
+  const { data: session, status } = useSession();
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
@@ -13,6 +15,14 @@ export default function Home() {
   const [file, setFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
+
+  const handleUploadClick = () => {
+    if (status !== "authenticated") {
+      router.push("/login");
+      return;
+    }
+    fileInputRef.current?.click();
+  };
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -88,6 +98,23 @@ export default function Home() {
 
   return (
     <main className={styles.container}>
+      <header className={styles.topNav}>
+        <div className={styles.logo}>HUNTR</div>
+        <div className={styles.navActions}>
+          {status === "authenticated" ? (
+            <div className={styles.userMenu}>
+              <span className={styles.userEmail}>{session.user?.email}</span>
+              <button onClick={() => router.push("/dashboard")} className={styles.dashboardLink}>Dashboard</button>
+              <button onClick={() => signOut()} className={styles.logoutIcon} title="Sign Out">
+                <LogOut size={18} />
+              </button>
+            </div>
+          ) : (
+            <button onClick={() => router.push("/login")} className={styles.signInButton}>Sign In</button>
+          )}
+        </div>
+      </header>
+
       <div className={styles.gridBackground}></div>
       <div className={styles.blob + " " + styles.blob1}></div>
       <div className={styles.blob + " " + styles.blob2}></div>
@@ -99,7 +126,7 @@ export default function Home() {
               <div className={styles.logoSmall}>HUNTR</div>
               <div className={styles.scanningStatus}>
                 <span className={styles.statusDot}></span>
-                WEB_SCAN_IN_PROGRESS
+                Synchronizing Market Data
               </div>
             </div>
             

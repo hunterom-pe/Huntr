@@ -2,85 +2,127 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
 import { getPrisma } from "@/lib/prisma";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+
+import { auth } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
   try {
-    const { profileId, jobId } = await req.json();
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const userId = session.user.id;
+
+    const { jobId } = await req.json();
     
-    if (!profileId || !jobId) {
-      return NextResponse.json({ error: "profileId and jobId are required" }, { status: 400 });
+    if (!jobId) {
+      return NextResponse.json({ error: "jobId is required" }, { status: 400 });
     }
 
-    const profile = await getPrisma().profile.findUnique({ where: { id: profileId } });
+    const profile = await getPrisma().profile.findUnique({ where: { userId } });
     const job = await getPrisma().job.findUnique({ where: { id: jobId } });
 
     if (!profile || !job) {
       return NextResponse.json({ error: "Profile or Job not found" }, { status: 404 });
     }
 
+    const profileId = profile.id;
+
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      const mockRewritten = `# Rewritten Resume for ${job.title} at ${job.company}\n\n*This is a mock rewritten resume since no Gemini API key was provided.*\n\n${profile.originalResume}`;
-      let application = await getPrisma().application.findFirst({ where: { jobId } });
-      if (!application) {
-        application = await getPrisma().application.create({
-          data: { jobId, status: "PENDING", rewrittenResume: mockRewritten }
-        });
-      } else {
-        application = await getPrisma().application.update({
-          where: { id: application.id },
-          data: { rewrittenResume: mockRewritten }
-        });
-      }
-      return NextResponse.json({ success: true, applicationId: application.id, rewrittenResume: mockRewritten });
+      return NextResponse.json({ error: "Gemini API key not configured" }, { status: 500 });
     }
 
-    let rewrittenResume = "";
-    try {
-      const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    // Clean the resume text
+    const cleanOriginalResume = profile.originalResume
+      .replace(/-- \d+ of \d+ --/g, "") 
+      .replace(/[\u0080-\uFFFF]/g, " ")
+      .trim();
 
-      const prompt = `
-      You are an expert resume writer. Please rewrite the following resume to perfectly match the provided job description.
-      Highlight the skills and experiences from the resume that are most relevant to the job.
-      Do not invent new experiences, but rephrase existing ones to use the keywords and tone from the job description.
-      Output the rewritten resume in Markdown format.
+    const prompt = `
+      REWRITE THE FOLLOWING RESUME FOR THIS JOB.
+      
+      TASK 1: REWRITE CONTENT
+      Optimize the summary, skills, and bullets for the JD. Keep it professional.
+      
+      TASK 2: IDENTIFY ANCHORS
+      For the "Summary" and each "Experience" entry, provide a unique 20-30 character snippet from the ORIGINAL text that I can use to find that section in the Word document.
+      
+      Output ONLY a raw JSON object:
+      {
+        "rewrittenJson": {
+          "header": { "name": "...", "email": "...", "phone": "..." },
+          "summary": "...",
+          "experience": [ 
+            { 
+              "company": "...", 
+              "role": "...", 
+              "new_bullets": ["..."],
+              "original_anchor": "A unique snippet from the original text for this job" 
+            } 
+          ],
+          "skills": ["..."],
+          "original_summary_anchor": "A unique snippet from the original summary"
+        }
+      }
 
       RESUME:
-      ${profile.originalResume}
+      ${cleanOriginalResume}
 
       JOB DESCRIPTION:
       ${job.description}
-      `;
+    `;
 
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      rewrittenResume = response.text().trim();
-    } catch (aiError: any) {
-      console.warn("Gemini Rewrite failed, using mock fallback:", aiError.message);
-      rewrittenResume = `# Optimized Resume: ${job.title}\n\n*Optimized for ${job.company}*\n\n---\n\n${profile.originalResume}\n\n---\n*Note: This version was generated using a high-fidelity local template as the AI module is currently recalibrating.*`;
+    // Direct Fetch call to the v1beta endpoint
+    const apiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }]
+      })
+    });
+
+    if (!apiResponse.ok) {
+      const errorData = await apiResponse.json();
+      throw new Error(errorData.error?.message || "Gemini API request failed");
     }
 
-    let application = await getPrisma().application.findFirst({ where: { jobId } });
+    const resultData = await apiResponse.json();
+    let text = resultData.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+
+    if (text.startsWith("```")) {
+      text = text.replace(/^```json\n?/, "").replace(/```$/, "").trim();
+    }
+    
+    const structuredResume = JSON.parse(text);
+
+    // Save to database
+    let application = await getPrisma().application.findFirst({ 
+      where: { jobId, profileId } 
+    });
+
+    const updateData = {
+      rewrittenResume: JSON.stringify(structuredResume),
+      rewrittenResumeJson: structuredResume,
+      status: "PENDING"
+    };
+
     if (!application) {
       application = await getPrisma().application.create({
-        data: { jobId, status: "PENDING", rewrittenResume: rewrittenResume }
+        data: { jobId, profileId, ...updateData }
       });
     } else {
       application = await getPrisma().application.update({
         where: { id: application.id },
-        data: { rewrittenResume: rewrittenResume }
+        data: updateData
       });
     }
 
-    return NextResponse.json({ success: true, applicationId: application.id, rewrittenResume });
-  } catch (error: any) {
-    console.error("Rewrite error:", error);
-    return NextResponse.json({ 
-      error: "Failed to rewrite resume", 
-      details: error.message,
-      stack: error.stack 
-    }, { status: 500 });
+    return NextResponse.json({ success: true, applicationId: application.id });
+
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error("Rewrite error:", err);
+    return NextResponse.json({ error: "Failed to rewrite resume", details: err.message }, { status: 500 });
   }
 }

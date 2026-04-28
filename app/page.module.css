@@ -1,3 +1,77 @@
+.topNav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4rem;
+  z-index: 100;
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.navActions {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.userMenu {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  background: rgba(255, 255, 255, 0.4);
+  padding: 0.5rem 1rem;
+  border-radius: 100px;
+  border: 1px solid var(--border-color);
+}
+
+.userEmail {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.dashboardLink {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--accent-main);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.logoutIcon {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 0;
+}
+
+.signInButton {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid var(--border-color);
+  padding: 0.6rem 1.5rem;
+  border-radius: 100px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.signInButton:hover {
+  background: white;
+  transform: translateY(-1px);
+}
+
 .container {
   min-height: 100vh;
   display: flex;
@@ -16,11 +90,11 @@
   right: 0;
   bottom: 0;
   background-image: 
-    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-  background-size: 40px 40px;
+    linear-gradient(rgba(0, 122, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 122, 255, 0.05) 1px, transparent 1px);
+  background-size: 60px 60px;
   background-position: center center;
-  mask-image: radial-gradient(circle at 50% 50%, black, transparent 80%);
+  mask-image: radial-gradient(circle at 50% 50%, black, transparent 90%);
   z-index: 1;
   pointer-events: none;
 }
@@ -39,17 +113,17 @@
   font-size: 2.5rem;
   font-weight: 900;
   letter-spacing: 0.15em;
-  background: linear-gradient(135deg, #fff 0%, var(--accent-main) 100%);
+  background: linear-gradient(135deg, var(--text-main) 0%, var(--accent-main) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  text-shadow: 0 0 30px rgba(0, 122, 255, 0.3);
+  text-shadow: 0 10px 20px rgba(0, 122, 255, 0.1);
 }
 
 .tagline {
   font-family: var(--font-mono);
   font-size: 0.6rem;
   letter-spacing: 0.5em;
-  color: #00d4ff;
+  color: var(--accent-main);
   font-weight: 700;
   padding-left: 0.2rem;
 }
@@ -59,7 +133,9 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
+  padding-top: 1vh;
+  margin-top: -12vh;
   z-index: 10;
   max-width: 1200px;
   margin: 0 auto;
@@ -98,8 +174,8 @@
   font-size: 5rem;
   font-weight: 900;
   letter-spacing: -0.04em;
-  margin-bottom: 1.5rem;
-  line-height: 1;
+  margin-bottom: 2.5rem;
+  line-height: 1.1;
   text-transform: uppercase;
 }
 
@@ -107,8 +183,8 @@
   font-size: 1.25rem;
   color: var(--text-muted);
   max-width: 600px;
-  margin: 0 auto;
-  line-height: 1.6;
+  margin: 0 auto 3rem auto;
+  line-height: 1.8;
 }
 
 .uploadSection {
@@ -121,18 +197,19 @@
   border-radius: var(--radius-md);
   padding: 5rem 2rem;
   text-align: center;
-  background: rgba(10, 10, 10, 0.6);
+  background: var(--bg-card);
   backdrop-filter: var(--glass-blur);
   transition: all var(--transition-smooth);
   cursor: pointer;
   position: relative;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03);
 }
 
 .dropzone:hover, .dropzoneActive {
   border-color: var(--accent-main);
-  background: rgba(0, 122, 255, 0.03);
-  box-shadow: 0 0 40px rgba(0, 122, 255, 0.1);
-  transform: scale(1.01);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 20px 50px rgba(0, 122, 255, 0.1);
+  transform: translateY(-4px);
 }
 
 .cornerTl, .cornerTr, .cornerBl, .cornerBr {
@@ -225,25 +302,25 @@
   position: absolute;
   filter: blur(120px);
   border-radius: 50%;
-  opacity: 0.1;
+  opacity: 0.15;
   z-index: 0;
   pointer-events: none;
 }
 
 .blob1 {
   top: 10%;
-  left: 20%;
+  left: 10%;
   width: 600px;
   height: 600px;
   background: var(--accent-main);
 }
 
 .blob2 {
-  bottom: 0%;
+  bottom: 10%;
   right: 10%;
   width: 700px;
   height: 700px;
-  background: #ff2d55;
+  background: #00d4ff;
 }
 
 @keyframes blink {
@@ -268,12 +345,13 @@
 .scanningContent {
   width: 100%;
   max-width: 800px;
-  background: rgba(10, 10, 10, 0.8);
+  background: rgba(255, 255, 255, 0.9);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
   padding: 4rem;
   backdrop-filter: blur(40px);
   position: relative;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.1);
 }
 
 .scanningHeader {

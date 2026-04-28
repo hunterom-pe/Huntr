@@ -6,6 +6,8 @@ export const metadata: Metadata = {
   description: "Find jobs matching your resume and automatically rewrite it to perfection.",
 };
 
+import { Providers } from "@/components/Providers";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -14,7 +16,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        {children}
+        <Providers>{children}</Providers>
       </body>
     </html>
   );
