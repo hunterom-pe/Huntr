@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
     const profileId = profile.id;
 
     const jobs = await getPrisma().job.findMany({
-      where: { isDeleted: false },
+      where: { isDeleted: false, userId },
       orderBy: { createdAt: 'desc' },
       take: 100,
       include: { 

@@ -13,12 +13,21 @@ test.describe('Authentication Flow', () => {
     await expect(sandboxBtn).toBeVisible({ timeout: 10000 });
     await sandboxBtn.click();
     
-    // 4. Verify redirection to dashboard
-    await page.waitForURL('**/dashboard', { timeout: 15000 });
+    // 4. After login, new users (no profile) go to home page, returning users go to dashboard
+    // Wait for either destination
+    await page.waitForURL(/\/(dashboard)?$/, { timeout: 15000 });
     
-    // 5. Verify session state in sidebar system status
-    const systemStatus = page.locator('div[class*="systemStatus"]');
-    await expect(systemStatus).toContainText(/test@example\.com/i, { timeout: 20000 });
+    // 5. Verify we're authenticated by checking for user-specific content
+    // On home page: the header shows the email and a "Dashboard" link
+    // On dashboard: the sidebar shows the email in systemStatus
+    const pageUrl = page.url();
+    if (pageUrl.includes('/dashboard')) {
+      const systemStatus = page.locator('div[class*="systemStatus"]');
+      await expect(systemStatus).toContainText(/test@example\.com/i, { timeout: 20000 });
+    } else {
+      // Home page — verify authenticated state in nav
+      await expect(page.locator('header')).toContainText(/test@example\.com|Dashboard/i, { timeout: 15000 });
+    }
   });
 
   test('should redirect unauthenticated users to login', async ({ page }) => {

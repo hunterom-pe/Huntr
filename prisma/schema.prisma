@@ -18,6 +18,7 @@ model User {
   accounts      Account[]
   sessions      Session[]
   profile       Profile?
+  jobs          Job[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
@@ -65,6 +66,8 @@ model Profile {
   pdfBase64       String?  // Legacy PDF data for Vision analysis
   contactInfo     String?
   skills          String?
+  targetRole      String?  // AI-extracted target job title for search
+  targetLocations String?  // Comma-separated preferred locations
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   Application     Application[]
@@ -72,9 +75,11 @@ model Profile {
 
 model Job {
   id              String   @id @default(cuid())
+  userId          String   // Owner of this job result
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   company         String
   title           String
-  location        String   // Remote, Phoenix, Tempe, Scottsdale
+  location        String
   description     String
   applyLink       String?
   matchScore      Int?     // 0-100
@@ -84,6 +89,7 @@ model Job {
   updatedAt       DateTime @updatedAt
   Application     Application[]
 
+  @@index([userId])
   @@index([isSaved])
   @@index([isDeleted])
 }

@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
 import { getPrisma } from "@/lib/prisma";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 import { auth } from "@/lib/auth";
 
@@ -73,22 +74,11 @@ export async function POST(req: NextRequest) {
       ${job.description}
     `;
 
-    // Direct Fetch call to the v1beta endpoint
-    const apiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }]
-      })
-    });
-
-    if (!apiResponse.ok) {
-      const errorData = await apiResponse.json();
-      throw new Error(errorData.error?.message || "Gemini API request failed");
-    }
-
-    const resultData = await apiResponse.json();
-    let text = resultData.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+    // Use official SDK instead of raw fetch (avoids API key in URL)
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+    const result = await model.generateContent(prompt);
+    let text = result.response.text().trim();
 
     if (text.startsWith("```")) {
       text = text.replace(/^```json\n?/, "").replace(/```$/, "").trim();

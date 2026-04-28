@@ -7,8 +7,6 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 import { auth } from "@/lib/auth";
 
-const LOCATIONS = ["Remote", "Phoenix, AZ", "Tempe, AZ", "Scottsdale, AZ"];
-
 export async function POST(req: NextRequest) {
   try {
     const session = await auth();
@@ -25,22 +23,30 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Profile not found. Please upload a resume first." }, { status: 404 });
     }
 
-    // Extract a brief query based on skills, or default to a generic job if skills are empty
-    // For MVP, we will use a hardcoded query or extract top 3 keywords. Let's assume a generic tech query for now,
-    // or we can use Gemini to extract job title. Let's do a generic one if no skills are parsed.
-    const query = "QA Lead"; // Updated dynamically for MVP testing
+    // Use AI-extracted role from profile, or fall back to a generic query
+    const query = profile.targetRole || "Software Developer";
+
+    // Use AI-extracted locations from profile, or fall back to Remote
+    const locations = profile.targetLocations
+      ? profile.targetLocations.split(",").map(l => l.trim()).filter(Boolean)
+      : ["Remote"];
+
+    // Always include Remote if not already present
+    if (!locations.some(l => l.toLowerCase() === "remote")) {
+      locations.unshift("Remote");
+    }
 
     const serpApiKey = process.env.SERPAPI_KEY;
     const allScrapedJobs: unknown[] = [];
 
     if (serpApiKey) {
-      const searchPromises = LOCATIONS.map(async (location) => {
+      const searchPromises = locations.map(async (location) => {
         const searchParams: Record<string, string> = {
           engine: "google_jobs",
-          q: location === "Remote" ? query : `${query} in ${location}`,
+          q: location.toLowerCase() === "remote" ? query : `${query} in ${location}`,
           api_key: serpApiKey,
         };
-        if (location === "Remote") searchParams.ltype = "1";
+        if (location.toLowerCase() === "remote") searchParams.ltype = "1";
         
         const response = await getJson(searchParams);
         return { location, results: response.jobs_results || [] };
@@ -87,6 +93,7 @@ ${job.description || summarizedDescription}
         }
 
         return {
+          userId,
           company: job.company_name,
           title: job.title,
           location: job.location,
@@ -96,23 +103,27 @@ ${job.description || summarizedDescription}
         };
       }));
 
-      // Batch create using prisma.job.createMany
-      // Note: SQLite doesn't support createMany easily with some adapters, but PG does.
-      // We'll use a loop of creates if createMany isn't available, but here we'll try to batch.
       for (const jobData of processedJobs) {
         const savedJob = await getPrisma().job.create({ data: jobData });
         allScrapedJobs.push(savedJob);
       }
     } else {
       console.log("No SERPAPI_KEY found. Generating mock jobs.");
-      for (const location of LOCATIONS) {
+      const mockTitles = [
+        query,
+        `Senior ${query}`,
+        `${query} - Contract`,
+        `Lead ${query}`,
+      ];
+      for (const location of locations) {
         for (let i = 0; i < 2; i++) {
           const savedJob = await getPrisma().job.create({
             data: {
+              userId,
               company: `Mock Company ${i + 1}`,
-              title: `Frontend Developer`,
+              title: mockTitles[i % mockTitles.length],
               location: location,
-              description: `• Expert in React and Next.js\n• 5+ years experience\n• Strong CSS skills`,
+              description: `• Expert in relevant technologies\n• ${3 + i}+ years experience\n• Strong problem-solving skills`,
               matchScore: 70 + Math.floor(Math.random() * 25),
               applyLink: "https://example.com/apply",
             }
@@ -128,3 +139,4 @@ ${job.description || summarizedDescription}
     return NextResponse.json({ error: "Failed to sweep jobs" }, { status: 500 });
   }
 }
+
