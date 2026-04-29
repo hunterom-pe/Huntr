@@ -134,8 +134,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  padding-top: 1vh;
-  margin-top: -12vh;
+  padding-top: 160px;
   z-index: 10;
   max-width: 1200px;
   margin: 0 auto;
@@ -144,148 +143,182 @@
 
 .hero {
   text-align: center;
-  margin-bottom: 4rem;
-}
-
-.statusIndicator {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.75rem;
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  background: rgba(255, 255, 255, 0.03);
-  padding: 0.5rem 1rem;
-  border-radius: var(--radius-full);
-  border: 1px solid var(--border-color);
-  margin-bottom: 2rem;
-}
-
-.statusDot {
-  width: 6px;
-  height: 6px;
-  background: var(--success);
-  border-radius: 50%;
-  box-shadow: 0 0 10px var(--success);
-  animation: blink 2s infinite;
+  margin-bottom: 6rem;
+  max-width: 900px;
 }
 
 .title {
-  font-size: 5rem;
+  font-size: 5.5rem;
   font-weight: 900;
   letter-spacing: -0.04em;
-  margin-bottom: 2.5rem;
-  line-height: 1.1;
+  margin-bottom: 2rem;
+  line-height: 1;
   text-transform: uppercase;
 }
 
 .subtitle {
-  font-size: 1.25rem;
+  font-size: 1.5rem;
   color: var(--text-muted);
-  max-width: 600px;
+  max-width: 700px;
   margin: 0 auto 3rem auto;
-  line-height: 1.8;
+  line-height: 1.6;
 }
 
-.uploadSection {
-  width: 100%;
-  max-width: 600px;
+.ctaContainer {
+  display: flex;
+  gap: 1.5rem;
+  justify-content: center;
 }
 
-.dropzone {
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  padding: 5rem 2rem;
-  text-align: center;
+.getStartedBtn {
+  background: var(--accent-main);
+  color: white;
+  padding: 1.2rem 2.5rem;
+  border-radius: var(--radius-full);
+  font-size: 1.1rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  transition: all var(--transition-smooth);
+  box-shadow: 0 10px 30px rgba(0, 122, 255, 0.3);
+}
+
+.getStartedBtn:hover {
+  background: var(--accent-hover);
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px rgba(0, 122, 255, 0.4);
+}
+
+.secondaryBtn {
   background: var(--bg-card);
   backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  padding: 1.2rem 2.5rem;
+  border-radius: var(--radius-full);
+  font-size: 1.1rem;
+  font-weight: 700;
   transition: all var(--transition-smooth);
-  cursor: pointer;
-  position: relative;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03);
 }
 
-.dropzone:hover, .dropzoneActive {
-  border-color: var(--accent-main);
-  background: rgba(255, 255, 255, 0.9);
-  box-shadow: 0 20px 50px rgba(0, 122, 255, 0.1);
+.secondaryBtn:hover {
+  background: white;
   transform: translateY(-4px);
 }
 
-.cornerTl, .cornerTr, .cornerBl, .cornerBr {
-  position: absolute;
-  width: 15px;
-  height: 15px;
+/* Features Grid */
+.featuresGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+  width: 100%;
+  margin-bottom: 8rem;
+}
+
+.featureCard {
+  background: var(--bg-card);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  transition: all var(--transition-smooth);
+}
+
+.featureCard:hover {
+  transform: translateY(-8px);
   border-color: var(--accent-main);
-  opacity: 0.5;
-  transition: all var(--transition-smooth);
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.05);
 }
 
-.dropzone:hover [class*="corner"] {
-  opacity: 1;
-  width: 25px;
-  height: 25px;
-}
-
-.cornerTl { top: -1px; left: -1px; border-top: 2px solid; border-left: 2px solid; }
-.cornerTr { top: -1px; right: -1px; border-top: 2px solid; border-right: 2px solid; }
-.cornerBl { bottom: -1px; left: -1px; border-bottom: 2px solid; border-left: 2px solid; }
-.cornerBr { bottom: -1px; right: -1px; border-bottom: 2px solid; border-right: 2px solid; }
-
-.dropzoneIcon {
-  width: 54px;
-  height: 54px;
-  color: var(--text-muted);
-  margin-bottom: 2rem;
-  transition: all var(--transition-smooth);
-}
-
-.dropzone:hover .dropzoneIcon {
+.featureIcon {
+  width: 48px;
+  height: 48px;
   color: var(--accent-main);
-  transform: translateY(-5px);
+  background: rgba(0, 122, 255, 0.05);
+  padding: 0.75rem;
+  border-radius: var(--radius-md);
 }
 
-.dropzoneText {
+.featureTitle {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.featureText {
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+/* Steps Section */
+.stepsSection {
+  width: 100%;
+  text-align: center;
+  margin-bottom: 8rem;
+}
+
+.sectionTitle {
+  font-size: 3rem;
+  font-weight: 800;
+  margin-bottom: 4rem;
+}
+
+.stepsContainer {
+  display: flex;
+  justify-content: space-between;
+  gap: 4rem;
+  position: relative;
+}
+
+.stepItem {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.stepNumber {
+  width: 50px;
+  height: 50px;
+  background: var(--accent-main);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
   font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 1.25rem;
+  box-shadow: 0 0 20px rgba(0, 122, 255, 0.3);
+}
+
+.stepTitle {
   font-size: 1.25rem;
   font-weight: 700;
-  margin-bottom: 0.75rem;
-  letter-spacing: 0.1em;
 }
 
-.dropzoneSubtext {
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
+.stepText {
   color: var(--text-muted);
-  letter-spacing: 0.2em;
-  opacity: 0.6;
-}
-
-.uploadHint {
-  margin-top: 1.5rem;
-  text-align: center;
-  font-family: var(--font-mono);
-  font-size: 0.6rem;
-  color: var(--text-muted);
-  letter-spacing: 0.1em;
-  opacity: 0.4;
-}
-
-.fileInput {
-  display: none;
+  font-size: 0.95rem;
 }
 
 .footer {
   z-index: 10;
-  padding: 2rem;
+  padding: 4rem;
   display: flex;
   justify-content: space-between;
   width: 100%;
   font-family: var(--font-mono);
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   color: var(--text-muted);
   letter-spacing: 0.1em;
-  opacity: 0.5;
+  border-top: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.3);
 }
 
 .footerItem {
@@ -328,103 +361,3 @@
   50% { opacity: 0.5; transform: scale(0.8); }
 }
 
-.scanningOverlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: var(--bg-main);
-  z-index: 100;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem;
-}
-
-.scanningContent {
-  width: 100%;
-  max-width: 800px;
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
-  padding: 4rem;
-  backdrop-filter: blur(40px);
-  position: relative;
-  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.1);
-}
-
-.scanningHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 3rem;
-}
-
-.logoSmall {
-  font-family: var(--font-mono);
-  font-size: 1.5rem;
-  font-weight: 900;
-  letter-spacing: 0.1em;
-  color: var(--accent-main);
-}
-
-.scanningStatus {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
-  color: var(--success);
-  letter-spacing: 0.1em;
-}
-
-.scanningTitle {
-  font-size: 3rem;
-  font-weight: 800;
-  margin-bottom: 1rem;
-  letter-spacing: -0.02em;
-}
-
-.scanningSubtitle {
-  color: var(--text-muted);
-  font-size: 1.1rem;
-  margin-bottom: 3rem;
-}
-
-.progressBarContainer {
-  height: 4px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 2px;
-  overflow: hidden;
-  margin-bottom: 3rem;
-  position: relative;
-}
-
-.progressBar {
-  height: 100%;
-  background: var(--accent-main);
-  box-shadow: 0 0 20px var(--accent-main);
-  transition: width 0.1s linear;
-}
-
-.scanningLog {
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  max-height: 150px;
-  overflow: hidden;
-}
-
-.logItem {
-  animation: fadeIn 0.3s ease-out forwards;
-  opacity: 0;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(5px); }
-  to { opacity: 1; transform: translateY(0); }
-}

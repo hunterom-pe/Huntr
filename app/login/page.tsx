@@ -2,11 +2,13 @@
 
 import { signIn } from "next-auth/react";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import styles from "./login.module.css";
-import { LogIn, Mail, Loader2 } from "lucide-react";
+import { LogIn, Mail, Loader2, ArrowLeft } from "lucide-react";
 
 export default function LoginPage() {
   const [loading, setLoading] = useState<string | null>(null);
+  const router = useRouter();
 
   const handleGoogleLogin = () => {
     setLoading("google");
@@ -25,8 +27,13 @@ export default function LoginPage() {
 
   return (
     <main className={styles.container}>
+      <button onClick={() => router.push("/")} className={styles.backButton}>
+        <ArrowLeft size={16} /> Back to Home
+      </button>
+      
       <div className={styles.gridBackground}></div>
-      <div className={styles.blob}></div>
+      <div className={`${styles.blob} ${styles.blob1}`}></div>
+      <div className={`${styles.blob} ${styles.blob2}`}></div>
 
       <div className={styles.loginCard}>
         <div className={styles.header}>
@@ -52,11 +59,11 @@ export default function LoginPage() {
           <form onSubmit={handleTestLogin} className={styles.form}>
             <div className={styles.inputGroup}>
               <label>Email</label>
-              <input type="email" value="test@example.com" disabled />
+              <input type="email" value="test@example.com" disabled className={styles.premiumInput} />
             </div>
             <div className={styles.inputGroup}>
               <label>Password</label>
-              <input type="password" value="password" disabled />
+              <input type="password" value="password" disabled className={styles.premiumInput} />
             </div>
             <button 
               type="submit" 
@@ -64,13 +71,13 @@ export default function LoginPage() {
               disabled={!!loading}
             >
               {loading === "credentials" ? <Loader2 className="animate-spin" /> : <LogIn size={20} />}
-              Login to Sandbox
+              Enter Sandbox (Demo)
             </button>
           </form>
         </div>
 
         <p className={styles.footer}>
-          Your data is encrypted and secure.
+          New to Huntr? <button onClick={() => router.push("/register")} className="text-[var(--accent-main)] font-bold hover:underline">Create an Account</button>
         </p>
       </div>
     </main>

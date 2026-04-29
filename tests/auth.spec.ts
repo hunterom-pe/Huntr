@@ -6,10 +6,10 @@ test.describe('Authentication Flow', () => {
     await page.goto('/login');
     
     // 2. Verify login page elements
-    await expect(page.locator('h1')).toContainText('Welcome Back');
+    await expect(page.getByRole('heading', { name: 'Welcome Back' })).toBeVisible();
     
     // 3. Click Sandbox Login
-    const sandboxBtn = page.getByRole('button', { name: /login to sandbox/i });
+    const sandboxBtn = page.getByRole('button', { name: /enter sandbox/i });
     await expect(sandboxBtn).toBeVisible({ timeout: 10000 });
     await sandboxBtn.click();
     
@@ -33,6 +33,6 @@ test.describe('Authentication Flow', () => {
   test('should redirect unauthenticated users to login', async ({ page }) => {
     await page.goto('/dashboard');
     await page.waitForURL('**/login');
-    await expect(page.locator('h1')).toContainText('Welcome Back');
+    await expect(page.getByRole('heading', { name: 'Welcome Back' })).toBeVisible();
   });
 });

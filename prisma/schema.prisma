@@ -15,6 +15,7 @@ model User {
   email         String?   @unique
   emailVerified DateTime?
   image         String?
+  password      String?
   accounts      Account[]
   sessions      Session[]
   profile       Profile?
@@ -83,6 +84,7 @@ model Job {
   description     String
   applyLink       String?
   matchScore      Int?     // 0-100
+  matchReason     Json?    // AI-generated breakdown of the score
   isSaved         Boolean  @default(false)
   isDeleted       Boolean  @default(false)
   createdAt       DateTime @default(now())

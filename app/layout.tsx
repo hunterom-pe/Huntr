@@ -16,7 +16,18 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <Providers>{children}</Providers>
+        <div className="mobile-gate">
+          <div className="mobile-gate-content">
+            <div className="mobile-gate-logo">HUNTR</div>
+            <h1 className="mobile-gate-title">Desktop Only</h1>
+            <p className="mobile-gate-text">
+              Huntr is designed for desktop browsers. Please visit on a laptop or desktop computer for the best experience.
+            </p>
+          </div>
+        </div>
+        <div className="desktop-content">
+          <Providers>{children}</Providers>
+        </div>
       </body>
     </html>
   );

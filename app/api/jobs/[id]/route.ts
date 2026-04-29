@@ -29,7 +29,7 @@ export async function PATCH(
       }
     });
     return NextResponse.json(job);
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "Failed to update job" }, { status: 500 });
   }
 }
@@ -54,7 +54,7 @@ export async function DELETE(
 
     await getPrisma().job.delete({ where: { id } });
     return NextResponse.json({ success: true });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "Failed to delete job" }, { status: 500 });
   }
 }

@@ -23,15 +23,53 @@
 
 .blob {
   position: absolute;
-  width: 600px;
-  height: 600px;
-  background: radial-gradient(circle at center, var(--accent-main) 0%, transparent 70%);
-  filter: blur(80px);
-  opacity: 0.1;
+  filter: blur(120px);
+  border-radius: 50%;
+  opacity: 0.15;
   z-index: 0;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.blob1 {
+  top: -10%;
+  left: -10%;
+  width: 500px;
+  height: 500px;
+  background: var(--accent-main);
+}
+
+.blob2 {
+  bottom: -10%;
+  right: -10%;
+  width: 500px;
+  height: 500px;
+  background: #00d4ff;
+}
+
+.backButton {
+  position: absolute;
+  top: 2rem;
+  left: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border-color);
+  padding: 0.6rem 1rem;
+  border-radius: 100px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  z-index: 100;
+  transition: all 0.2s;
+}
+
+.backButton:hover {
+  background: white;
+  color: var(--text-main);
+  transform: translateX(-4px);
 }
 
 .loginCard {
@@ -63,6 +101,9 @@
   letter-spacing: 0.2em;
   color: var(--accent-main);
   margin-bottom: 0.5rem;
+  background: linear-gradient(135deg, var(--text-main) 0%, var(--accent-main) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .title {
@@ -142,14 +183,23 @@
   letter-spacing: 0.05em;
 }
 
-.inputGroup input {
-  padding: 0.875rem;
+.premiumInput {
+  padding: 0.875rem 1.25rem;
   background: rgba(255, 255, 255, 0.5);
   border: 1px solid var(--border-color);
   border-radius: 14px;
   font-family: var(--font-mono);
   font-size: 0.875rem;
   color: var(--text-main);
+  outline: none;
+  transition: all 0.2s;
+  width: 100%;
+}
+
+.premiumInput:focus {
+  background: white;
+  border-color: var(--accent-main);
+  box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.05);
 }
 
 .loginButton {

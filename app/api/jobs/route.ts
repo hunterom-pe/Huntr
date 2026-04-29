@@ -5,7 +5,7 @@ import { getPrisma } from "@/lib/prisma";
 
 import { auth } from "@/lib/auth";
 
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
@@ -53,7 +53,7 @@ export async function GET(req: NextRequest) {
       include: { job: true }
     });
 
-    return NextResponse.json({ jobs, applications });
+    return NextResponse.json({ jobs, applications, profile });
   } catch (error) {
     console.error("Fetch error:", error);
     return NextResponse.json({ error: "Failed to fetch jobs" }, { status: 500 });

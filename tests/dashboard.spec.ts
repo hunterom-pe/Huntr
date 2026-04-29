@@ -4,7 +4,7 @@ test.describe('Dashboard Experience', () => {
   test.beforeEach(async ({ page }) => {
     // Perform login before each test
     await page.goto('/login');
-    await page.locator('button:has-text("Login to Sandbox")').click();
+    await page.locator('button:has-text("Enter Sandbox (Demo)")').click();
     // New users may land on home, returning users on dashboard
     await page.waitForURL(/\/(dashboard)?$/, { timeout: 15000 });
   });
@@ -22,17 +22,17 @@ test.describe('Dashboard Experience', () => {
     }
 
     // 1. Verify Overview is active
-    await expect(page.locator('h1')).toContainText(/overview|applications/i, { timeout: 10000 });
+    await expect(page.locator('main h1')).toContainText(/overview|pipeline|systems/i, { timeout: 10000 });
     
-    // 2. Click Applications tab in sidebar
-    await page.getByText('Applications', { exact: true }).click();
+    // 2. Click Job Pipeline tab in sidebar
+    await page.locator('nav').getByText('Job Pipeline', { exact: true }).click();
     
-    // 3. Verify Applications header
-    await expect(page.locator('h1')).toContainText(/applications/i, { timeout: 10000 });
+    // 3. Verify Job Pipeline header
+    await expect(page.locator('header h1')).toContainText(/pipeline/i, { timeout: 10000 });
     
-    // 4. Go back to overview
-    await page.getByText('Overview', { exact: true }).click();
-    await expect(page.locator('h1')).toContainText(/overview/i, { timeout: 10000 });
+    // 4. Go back to dashboard
+    await page.getByText('Dashboard', { exact: true }).first().click();
+    await expect(page.locator('main h1')).toContainText(/systems|overview/i, { timeout: 10000 });
   });
 
   test('should show correct system status with user email', async ({ page }) => {

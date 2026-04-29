@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getPrisma } from "@/lib/prisma";
+import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
+import { getPrisma } from "@/lib/prisma";
 
-export async function PATCH(req: NextRequest) {
+export async function PATCH(req: Request) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
@@ -10,36 +10,33 @@ export async function PATCH(req: NextRequest) {
     }
     const userId = session.user.id;
 
-    const { applicationId, status } = await req.json();
-
-    if (!applicationId || !status) {
-      return NextResponse.json({ error: "applicationId and status are required" }, { status: 400 });
+    const { jobId, status } = await req.json();
+    if (!jobId || !status) {
+      return NextResponse.json({ error: "Job ID and Status required" }, { status: 400 });
     }
 
-    const applicationCheck = await getPrisma().application.findUnique({
-      where: { id: applicationId },
-      include: { profile: true }
-    });
+    const prisma = getPrisma();
 
-    if (!applicationCheck || applicationCheck.profile?.userId !== userId) {
-      return NextResponse.json({ error: "Unauthorized: You do not own this application" }, { status: 403 });
-    }
+    // 1. Find the profile
+    const profile = await prisma.profile.findUnique({ where: { userId } });
+    if (!profile) return NextResponse.json({ error: "Profile not found" }, { status: 404 });
 
-    const validStatuses = ["PENDING", "INTERVIEWING", "OFFER", "REJECTED"];
-    if (!validStatuses.includes(status)) {
-      return NextResponse.json({ error: "Invalid status" }, { status: 400 });
-    }
-
-    const application = await getPrisma().application.update({
-      where: { id: applicationId },
-      data: { status },
-      include: { job: true }
+    // 2. Upsert the application record
+    const application = await prisma.application.upsert({
+      where: {
+        id: (await prisma.application.findFirst({ where: { jobId, profileId: profile.id } }))?.id || "new-id"
+      },
+      update: { status },
+      create: {
+        jobId,
+        profileId: profile.id,
+        status,
+      },
     });
 
     return NextResponse.json({ success: true, application });
-  } catch (error: unknown) {
-    const err = error as Error;
-    console.error("Update status error:", err);
-    return NextResponse.json({ error: "Failed to update status", details: err.message }, { status: 500 });
+  } catch (error) {
+    console.error("Status update error:", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

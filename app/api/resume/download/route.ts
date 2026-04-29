@@ -59,7 +59,7 @@ export async function GET(req: NextRequest) {
         
         // 1. Replace Summary
         if (resumeData.original_summary_anchor && resumeData.summary && content) {
-          console.log("Replacing summary using anchor:", resumeData.original_summary_anchor as string);
+
           content = content.replace(resumeData.original_summary_anchor as string, resumeData.summary as string);
         }
 
@@ -67,7 +67,7 @@ export async function GET(req: NextRequest) {
         if (resumeData.experience && Array.isArray(resumeData.experience) && content) {
           resumeData.experience.forEach((exp: { original_anchor?: string; new_bullets?: string[] | string }) => {
             if (exp.original_anchor && exp.new_bullets) {
-              console.log("Replacing experience using anchor:", exp.original_anchor);
+
               const newText = Array.isArray(exp.new_bullets) ? exp.new_bullets.join("\n") : exp.new_bullets;
               content = content!.replace(exp.original_anchor, newText);
             }

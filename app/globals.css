@@ -1,5 +1,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&family=Space+Mono:wght@400;700&display=swap');
 
+html {
+  scroll-behavior: smooth;
+}
+
 :root {
   --bg-main: #f0f4f8;
   --bg-secondary: #ffffff;
@@ -210,3 +214,67 @@ button {
   0%, 100% { opacity: 1; }
   50% { opacity: 0; }
 }
+
+/* Text gradient fix for light mode */
+.text-gradient {
+  background: linear-gradient(135deg, var(--accent-main) 0%, #00d4ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Mobile Gate */
+.mobile-gate {
+  display: none;
+}
+
+.desktop-content {
+  display: contents;
+}
+
+@media (max-width: 768px) {
+  .mobile-gate {
+    display: flex;
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    background: var(--bg-main);
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+  }
+
+  .mobile-gate-content {
+    text-align: center;
+    max-width: 360px;
+  }
+
+  .mobile-gate-logo {
+    font-family: var(--font-mono);
+    font-size: 2rem;
+    font-weight: 900;
+    letter-spacing: 0.15em;
+    background: linear-gradient(135deg, var(--text-main) 0%, var(--accent-main) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 2rem;
+  }
+
+  .mobile-gate-title {
+    font-size: 1.5rem;
+    font-weight: 800;
+    margin-bottom: 1rem;
+    color: var(--text-main);
+  }
+
+  .mobile-gate-text {
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    line-height: 1.7;
+  }
+
+  .desktop-content {
+    display: none;
+  }
+}
+

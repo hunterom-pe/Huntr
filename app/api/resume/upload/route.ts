@@ -3,7 +3,6 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { getPrisma } from "@/lib/prisma";
 import mammoth from "mammoth";
-import { PDFParse } from "pdf-parse";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 import { auth } from "@/lib/auth";
@@ -15,6 +14,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     const userId = session.user.id;
+    const prisma = getPrisma();
+
+    // Verify user exists in DB (to handle cases after DB reset)
+    const dbUser = await prisma.user.findUnique({ where: { id: userId } });
+    if (!dbUser) {
+      return NextResponse.json({ error: "Session expired or user not found. Please sign out and sign in again." }, { status: 401 });
+    }
 
     const formData = await req.formData();
     const file = formData.get("resume") as File | null;
@@ -31,18 +37,13 @@ export async function POST(req: NextRequest) {
     const buffer = Buffer.from(await file.arrayBuffer());
     let resumeText = "";
 
-    if (file.type === "application/pdf") {
-      const parser = new PDFParse({ data: buffer });
-      const data = await parser.getText();
-      resumeText = data.text;
-    } else if (file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
-      const result = await mammoth.extractRawText({ buffer });
-      resumeText = result.value;
-    } else {
-      return NextResponse.json({ error: "Unsupported file type" }, { status: 400 });
+    if (file.type !== "application/vnd.openxmlformats-officedocument.wordprocessingml.document" && !file.name.endsWith('.docx')) {
+      return NextResponse.json({ error: "Only DOCX files are supported." }, { status: 400 });
     }
 
-    const isDocx = file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+    const result = await mammoth.extractRawText({ buffer });
+    resumeText = result.value;
+
     const fileBase64 = buffer.toString('base64');
 
     // Use Gemini to extract target role and locations from resume
@@ -79,27 +80,27 @@ ${resumeText.substring(0, 3000)}`;
     }
 
     // Upsert: update existing profile or create new one
-    const profile = await getPrisma().profile.upsert({
+    const profile = await prisma.profile.upsert({
       where: { userId },
       update: {
         originalResume: resumeText,
-        pdfBase64: !isDocx ? fileBase64 : null,
-        docxBase64: isDocx ? fileBase64 : null,
+        pdfBase64: null,
+        docxBase64: fileBase64,
         targetRole,
         targetLocations,
       },
       create: {
-        userId,
+        user: { connect: { id: userId } },
         originalResume: resumeText,
-        pdfBase64: !isDocx ? fileBase64 : null,
-        docxBase64: isDocx ? fileBase64 : null,
+        pdfBase64: null,
+        docxBase64: fileBase64,
         targetRole,
         targetLocations,
       },
     });
 
     return NextResponse.json({ profileId: profile.id, success: true });
-  } catch (error: unknown) {
+  } catch (error) {
     console.error("Upload error:", error);
     // Security: Do not leak stack traces or internal details to client
     return NextResponse.json({ 
