@@ -2,8 +2,20 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Huntr",
-  description: "Find jobs matching your resume and automatically rewrite it to perfection.",
+  title: "Huntr | AI-Powered Career Intelligence",
+  description: "The state-of-the-art career dashboard that matches jobs to your resume and automatically rewrites them for 100% impact.",
+  openGraph: {
+    title: "Huntr",
+    description: "AI-Powered Career Intelligence",
+    images: ["/og-image.png"],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Huntr",
+    description: "AI-Powered Career Intelligence",
+    images: ["/og-image.png"],
+  },
 };
 
 import { Providers } from "@/components/Providers";
