@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://huntr-career.vercel.app"),
   title: "Huntr | AI-Powered Career Intelligence",
   description: "The state-of-the-art career dashboard that matches jobs to your resume and automatically rewrites them for 100% impact.",
   openGraph: {
